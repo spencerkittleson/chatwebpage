@@ -1,0 +1,12 @@
+langchain 
+streamlit-chat
+fastembed
+openai
+langchainhub
+chromadb
+streamlit
+watchdog
+bs4
+tiktoken
+sentence-transformers
+python-dotenv
