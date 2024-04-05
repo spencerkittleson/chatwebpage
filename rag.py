@@ -23,16 +23,36 @@ class ChatWebPage:
 
         # https://ollama.com/library/tinyllama:latest/blobs/af0ddbdaaa26
 
-        self.prompt = PromptTemplate.from_template(
-            """
-            <s> [INST] You are an assistant for question-answering tasks. Use the following pieces of retrieved context 
-            to answer the question. If you don't know the answer, just say that you don't know. Use three sentences
-             maximum and keep the answer concise. [/INST] </s> 
-            [INST] Question: {question} 
-            Context: {context} 
-            Answer: [/INST]
-            """
-        )
+        prompt_model_template_inst_based = ['mistral', 'mixtral']
+
+        # Check if any of the options are in the model string
+        if any(option in model for option in prompt_model_template_inst_based):
+            self.prompt = PromptTemplate.from_template(
+                """
+                <s> [INST] You are an assistant for question-answering tasks. Use the following pieces of retrieved context
+                to answer the question. If you don't know the answer, just say that you don't know. Use three sentences
+                maximum and keep the answer concise. [/INST] </s>
+                [INST] Question: {question}
+                Context: {context}
+                Answer: [/INST]
+                """
+            )
+        elif 'tinyllama:chat' in model:
+            self.prompt = PromptTemplate.from_template(
+                """
+                <|system|>
+                You are an assistant for question-answering tasks. Use the following pieces of retrieved context 
+                to answer the question. If you don't know the answer, just say that you don't know. Use three sentences
+                maximum and keep the answer concise.</s>
+                <|user|>
+                Question: {question} 
+                Context: {context} 
+                Answer: <|assistant|>
+                """
+            )
+        else:
+            raise NotImplemented(
+                "Unknown RAG template to use. Support models are mistral, mixtral, tinyllama:chat")
 
     def ingest(self, webpage: str):
 
