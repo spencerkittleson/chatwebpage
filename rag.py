@@ -4,7 +4,7 @@ from langchain.schema.output_parser import StrOutputParser
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.schema.runnable import RunnablePassthrough
 from langchain.prompts import PromptTemplate
-from langchain_community.document_loaders import WebBaseLoader
+from langchain_community.document_loaders import WebBaseLoader, TextLoader
 import os
 from langchain.embeddings.sentence_transformer import SentenceTransformerEmbeddings
 
@@ -22,8 +22,8 @@ class ChatWebPage:
             chunk_size=1024, chunk_overlap=100, separators=[" ", ",", "\n", os.linesep])
 
         # https://ollama.com/library/tinyllama:latest/blobs/af0ddbdaaa26
-
         prompt_model_template_inst_based = ['mistral', 'mixtral']
+        prompt_model_template_inst_xml_based = ['phi3', 'tinyllama:chat']
 
         # Check if any of the options are in the model string
         if any(option in model for option in prompt_model_template_inst_based):
@@ -31,19 +31,19 @@ class ChatWebPage:
                 """
                 <s> [INST] You are an assistant for question-answering tasks. Use the following pieces of retrieved context
                 to answer the question. If you don't know the answer, just say that you don't know. Use three sentences
-                maximum and keep the answer concise. [/INST] </s>
+                maximum and keep the answer concise. Add citations to source documents inline of the answer. [/INST] </s>
                 [INST] Question: {question}
                 Context: {context}
                 Answer: [/INST]
                 """
             )
-        elif 'tinyllama:chat' in model:
+        elif any(option in model for option in prompt_model_template_inst_xml_based):
             self.prompt = PromptTemplate.from_template(
                 """
                 <|system|>
                 You are an assistant for question-answering tasks. Use the following pieces of retrieved context 
                 to answer the question. If you don't know the answer, just say that you don't know. Use three sentences
-                maximum and keep the answer concise.</s>
+                maximum and keep the answer concise. </s>
                 <|user|>
                 Question: {question} 
                 Context: {context} 
@@ -52,13 +52,19 @@ class ChatWebPage:
             )
         else:
             raise NotImplemented(
-                "Unknown RAG template to use. Support models are mistral, mixtral, tinyllama:chat")
+                "Unknown RAG template to use. Supported models are mistral, mixtral, tinyllama:chat")
 
-    def ingest(self, webpage: str):
+    def ingest(self, webpage: str = None, text: str = None):
 
         # load the document and split it into chunks
-        print(f"webpage {webpage}")
-        loader = WebBaseLoader(webpage)
+        if webpage is not None:
+            print(f"webpage {webpage}")
+            loader = WebBaseLoader(webpage)
+        elif text is not None:
+            print(f"text {text}")
+            loader = TextLoader(text)
+        else:
+            raise Exception("Provider a loader")
         documents = loader.load()
 
         # split it into chunks
@@ -70,8 +76,11 @@ class ChatWebPage:
 
         # load it into Chroma
         db = Chroma.from_documents(
-            docs, embedding_function, persist_directory="./chroma_db")
-        db.persist()
+            docs, embedding_function)
+
+        # db = Chroma.from_documents(
+        #     docs, embedding_function, persist_directory="./chroma_db")
+        # db.persist()
 
         # load from disk
         # Note: The following code is demonstrating how to load the Chroma database from disk.
@@ -81,7 +90,7 @@ class ChatWebPage:
             search_type="similarity_score_threshold",
             search_kwargs={
                 "k": 3,
-                "score_threshold": 0.5,
+                "score_threshold": 0.3,
             },
         )
 

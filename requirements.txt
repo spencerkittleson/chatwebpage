@@ -10,3 +10,6 @@ bs4
 tiktoken
 sentence-transformers
 python-dotenv
+docx2txt
+unstructured
+faster-whisper

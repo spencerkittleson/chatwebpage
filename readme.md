@@ -21,3 +21,8 @@ Chat with a web page using RAG locally.
 
 - https://blog.duy-huynh.com/build-your-own-rag-and-run-them-locally/
 - https://github.com/vndee/local-rag-example/blob/main/rag.py
+
+
+## Perhaps
+- https://python.langchain.com/docs/modules/data_connection/retrievers/parent_document_retriever/
+- https://ollama.com/blog/embedding-models
